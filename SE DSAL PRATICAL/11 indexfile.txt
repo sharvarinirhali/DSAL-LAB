@@ -1,0 +1,195 @@
+#include<iostream>
+#include<fstream>
+#include<string.h>
+using namespace std;
+
+class EMP_CLASS {
+    struct Employee {
+        int emp_id;
+        char name[10];
+        int salary;
+    };
+
+    struct Index {
+        int emp_id;
+        int position;
+    };
+
+public:
+    void Create();
+    void Display();
+    void Update();
+    void Delete();
+    void Append();
+    void Search();
+};
+
+void EMP_CLASS::Create() {
+    ofstream seqfile("EMP.dat", ios::out | ios::binary);
+    ofstream indexfile("IND.dat", ios::out | ios::binary);
+    Employee emp;
+    Index ind;
+    char ch = 'y';
+
+    while (ch == 'y') {
+        cout << "\nEnter Emp_ID: "; cin >> emp.emp_id;
+        cout << "Enter Name: "; cin >> emp.name;
+        cout << "Enter Salary: "; cin >> emp.salary;
+
+        seqfile.write((char*)&emp, sizeof(emp));
+        ind.emp_id = emp.emp_id;
+        ind.position = seqfile.tellp() / sizeof(Employee) - 1;
+        indexfile.write((char*)&ind, sizeof(ind));
+
+        cout << "Do you want to add more records? (y/n): ";
+        cin >> ch;
+    }
+
+    seqfile.close();
+    indexfile.close();
+}
+
+void EMP_CLASS::Display() {
+    ifstream seqfile("EMP.dat", ios::in | ios::binary);
+    ifstream indexfile("IND.dat", ios::in | ios::binary);
+    Employee emp;
+    Index ind;
+
+    cout << "\nThe Contents of the file are...\n";
+    while (indexfile.read((char*)&ind, sizeof(ind))) {
+        seqfile.seekg(ind.position * sizeof(Employee), ios::beg);
+        seqfile.read((char*)&emp, sizeof(emp));
+        if (emp.emp_id != -1) {
+            cout << "Name: " << emp.name << "\nEmp_ID: " << emp.emp_id << "\nSalary: " << emp.salary << endl;
+        }
+    }
+
+    seqfile.close();
+    indexfile.close();
+}
+
+void EMP_CLASS::Update() {
+    int id;
+    cout << "\nEnter Emp_ID to update: ";
+    cin >> id;
+
+    fstream seqfile("EMP.dat", ios::in | ios::out | ios::binary);
+    fstream indexfile("IND.dat", ios::in | ios::out | ios::binary);
+    Employee emp;
+    Index ind;
+    bool found = false;
+
+    while (indexfile.read((char*)&ind, sizeof(ind))) {
+        if (ind.emp_id == id) {
+            seqfile.seekp(ind.position * sizeof(Employee), ios::beg);
+            cout << "Enter new Name: "; cin >> emp.name;
+            cout << "Enter new Salary: "; cin >> emp.salary;
+            emp.emp_id = id;  // Keep the emp_id same
+            seqfile.write((char*)&emp, sizeof(emp));
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) cout << "Record not found!" << endl;
+
+    seqfile.close();
+    indexfile.close();
+}
+
+void EMP_CLASS::Delete() {
+    int id;
+    cout << "\nEnter Emp_ID to delete: ";
+    cin >> id;
+
+    fstream seqfile("EMP.dat", ios::in | ios::out | ios::binary);
+    fstream indexfile("IND.dat", ios::in | ios::out | ios::binary);
+    Employee emp;
+    Index ind;
+    bool found = false;
+
+    while (indexfile.read((char*)&ind, sizeof(ind))) {
+        if (ind.emp_id == id) {
+            seqfile.seekp(ind.position * sizeof(Employee), ios::beg);
+            emp.emp_id = -1;
+            seqfile.write((char*)&emp, sizeof(emp));  // Logical deletion
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) cout << "Record not found!" << endl;
+
+    seqfile.close();
+    indexfile.close();
+}
+
+void EMP_CLASS::Append() {
+    ofstream seqfile("EMP.dat", ios::app | ios::binary);
+    ofstream indexfile("IND.dat", ios::app | ios::binary);
+    Employee emp;
+    Index ind;
+
+    cout << "\nEnter Emp_ID: "; cin >> emp.emp_id;
+    cout << "Enter Name: "; cin >> emp.name;
+    cout << "Enter Salary: "; cin >> emp.salary;
+
+    seqfile.write((char*)&emp, sizeof(emp));
+    ind.emp_id = emp.emp_id;
+    ind.position = seqfile.tellp() / sizeof(Employee) - 1;
+    indexfile.write((char*)&ind, sizeof(ind));
+
+    seqfile.close();
+    indexfile.close();
+}
+
+void EMP_CLASS::Search() {
+    int id;
+    cout << "\nEnter Emp_ID to search: ";
+    cin >> id;
+
+    ifstream seqfile("EMP.dat", ios::in | ios::binary);
+    ifstream indexfile("IND.dat", ios::in | ios::binary);
+    Employee emp;
+    Index ind;
+    bool found = false;
+
+    while (indexfile.read((char*)&ind, sizeof(ind))) {
+        if (ind.emp_id == id) {
+            seqfile.seekg(ind.position * sizeof(Employee), ios::beg);
+            seqfile.read((char*)&emp, sizeof(emp));
+            if (emp.emp_id != -1) {
+                cout << "Name: " << emp.name << "\nEmp_ID: " << emp.emp_id << "\nSalary: " << emp.salary << endl;
+                found = true;
+                break;
+            }
+        }
+    }
+
+    if (!found) cout << "Record not found!" << endl;
+
+    seqfile.close();
+    indexfile.close();
+}
+
+int main() {
+    EMP_CLASS emp;
+    int choice;
+
+    do {
+        cout << "\n1. Create\n2. Display\n3. Update\n4. Delete\n5. Append\n6. Search\n7. Exit\nEnter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: emp.Create(); break;
+            case 2: emp.Display(); break;
+            case 3: emp.Update(); break;
+            case 4: emp.Delete(); break;
+            case 5: emp.Append(); break;
+            case 6: emp.Search(); break;
+            case 7: exit(0);
+        }
+    } while (choice != 7);
+
+    return 0;
+}
